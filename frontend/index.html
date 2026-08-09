@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1e222b;
+    --line: #2a2f3a;
+    --text: #e7e6e2;
+    --text-dim: #8b909c;
+    --amber: #d6a24c;
+    --amber-dim: #7a6237;
+    --sage: #7fa687;
+    --rose: #c15c6b;
+    --blue: #6c8fb0;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+  .console {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+  header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 0 0 6px;
+  }
+  h1 { font-size: 20px; margin: 0 0 14px; font-weight: 600; }
+  .setup-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  select, button {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+  }
+  button {
+    background: var(--amber);
+    color: #241b06;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+  .meta-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 12px;
+    display: none;
+  }
+  .ticks { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .tick {
+    width: 10px; height: 10px; border-radius: 2px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .tick.filled { background: var(--amber); border-color: var(--amber); }
+
+  main {
+    flex: 1;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+  }
+  .msg { max-width: 84%; animation: rise 0.25s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+  .msg .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .msg .bubble {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    line-height: 1.5;
+    font-size: 14.5px;
+  }
+  .msg.interviewer { align-self: flex-start; }
+  .msg.interviewer .bubble { background: var(--panel); border: 1px solid var(--line); }
+  .msg.candidate { align-self: flex-end; }
+  .msg.candidate .bubble { background: var(--amber-dim); border: 1px solid var(--amber); color: #f5e9d3; }
+  .msg.candidate .tag { text-align: right; }
+
+  form {
+    display: none;
+    padding: 16px 24px 22px;
+    border-top: 1px solid var(--line);
+    gap: 10px;
+  }
+  textarea {
+    flex: 1;
+    resize: none;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14.5px;
+    min-height: 44px;
+    max-height: 140px;
+  }
+  textarea:focus, select:focus, button:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+
+  .report { padding: 4px 0 30px; }
+  .report h2 { font-size: 15px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em; color: var(--amber); margin: 24px 0 10px; }
+  .summary-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+  .cols { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 8px; }
+  @media (min-width: 620px) { .cols { grid-template-columns: 1fr 1fr 1fr; } }
+  .col h3 { font-size: 11px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 8px; }
+  .col.strengths h3 { color: var(--sage); }
+  .col.gaps h3 { color: var(--rose); }
+  .col.next h3 { color: var(--blue); }
+  .col ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .col li {
+    font-size: 13.5px; line-height: 1.45;
+    padding: 8px 10px; border-radius: 8px;
+    background: var(--panel); border: 1px solid var(--line);
+  }
+  .col.strengths li { border-left: 3px solid var(--sage); }
+  .col.gaps li { border-left: 3px solid var(--rose); }
+  .col.next li { border-left: 3px solid var(--blue); }
+
+  .hint { color: var(--text-dim); font-size: 13px; padding: 40px 24px; text-align: center; }
+  .error { color: var(--rose); font-size: 13px; padding: 10px 24px 0; }
+</style>
+</head>
+<body>
+<div class="console">
+  <header>
+    <p class="eyebrow">AI Cohort · Technical Interview Console</p>
+    <h1 id="title">Select a candidate to begin</h1>
+    <div class="setup-row">
+      <select id="candidateSelect"></select>
+      <input id="apiUrl" style="display:none" value="http://127.0.0.1:8000/api/interview">
+      <button id="startBtn">Start interview</button>
+    </div>
+    <div class="meta-line" id="metaLine">
+      <span id="turnCount">0</span> question(s) asked
+      <div class="ticks" id="ticks"></div>
+    </div>
+    <p class="error" id="errorLine" style="display:none"></p>
+  </header>
+
+  <main id="main">
+    <p class="hint">Pick a candidate from the dropdown above and click "Start interview".<br>
+    Make sure the backend is running at the URL above (see README).</p>
+  </main>
+
+  <form id="answerForm">
+    <textarea id="answerInput" placeholder="Type your answer…" rows="2"></textarea>
+    <button type="submit" id="sendBtn">Send</button>
+  </form>
+</div>
+
+<script>
+const API_URL = document.getElementById('apiUrl').value;
+const select = document.getElementById('candidateSelect');
+const startBtn = document.getElementById('startBtn');
+const main = document.getElementById('main');
+const form = document.getElementById('answerForm');
+const input = document.getElementById('answerInput');
+const sendBtn = document.getElementById('sendBtn');
+const metaLine = document.getElementById('metaLine');
+const turnCountEl = document.getElementById('turnCount');
+const ticksEl = document.getElementById('ticks');
+const errorLine = document.getElementById('errorLine');
+const titleEl = document.getElementById('title');
+
+let sessionId = null;
+let turnCount = 0;
+let candidates = [];
+
+function showError(msg) {
+  errorLine.textContent = msg;
+  errorLine.style.display = msg ? 'block' : 'none';
+}
+
+fetch('./candidates.json')
+  .then(r => r.json())
+  .then(data => {
+    candidates = data.candidates;
+    select.innerHTML = candidates.map(c =>
+      `<option value="${c.member.id}">${c.member.id} — ${c.member.name} (${c.member.jobRole})</option>`
+    ).join('');
+  })
+  .catch(() => showError('Could not load candidates.json — serve this folder with a local HTTP server (see README), not file://.'));
+
+function addMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="tag">${role === 'interviewer' ? 'AI Interviewer' : 'You'}</div><div class="bubble"></div>`;
+  div.querySelector('.bubble').textContent = text;
+  main.appendChild(div);
+  main.scrollTop = main.scrollHeight;
+}
+
+function updateTicks() {
+  turnCountEl.textContent = turnCount;
+  const shown = Math.max(turnCount, 8);
+  ticksEl.innerHTML = '';
+  for (let i = 0; i < shown; i++) {
+    const t = document.createElement('div');
+    t.className = 'tick' + (i < turnCount ? ' filled' : '');
+    ticksEl.appendChild(t);
+  }
+}
+
+function renderFeedback(fb) {
+  form.style.display = 'none';
+  const section = document.createElement('div');
+  section.className = 'report';
+  section.innerHTML = `
+    <h2>&gt; Feedback report</h2>
+    <div class="summary-card">${fb.summary}</div>
+    <div class="cols">
+      <div class="col strengths"><h3>Strengths</h3><ul>${(fb.strengths||[]).map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+      <div class="col gaps"><h3>Gaps</h3><ul>${(fb.gaps||[]).map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+      <div class="col next"><h3>Next steps</h3><ul>${(fb.next||[]).map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul></div>
+    </div>
+  `;
+  main.appendChild(section);
+  main.scrollTop = main.scrollHeight;
+}
+
+async function postTurn(body) {
+  const resp = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const detail = await resp.text();
+    throw new Error(`Server returned ${resp.status}: ${detail}`);
+  }
+  return resp.json();
+}
+
+startBtn.addEventListener('click', async () => {
+  showError('');
+  const candidate = candidates.find(c => c.member.id === select.value);
+  if (!candidate) return;
+  sessionId = crypto.randomUUID();
+  turnCount = 0;
+  main.innerHTML = '';
+  titleEl.textContent = `Interviewing ${candidate.member.name}`;
+  metaLine.style.display = 'block';
+  updateTicks();
+  startBtn.disabled = true;
+  try {
+    const data = await postTurn({ sessionId, candidate });
+    addMessage('interviewer', data.reply);
+    form.style.display = 'flex';
+    input.focus();
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    startBtn.disabled = false;
+  }
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const message = input.value.trim();
+  if (!message || !sessionId) return;
+  addMessage('candidate', message);
+  input.value = '';
+  sendBtn.disabled = true;
+  showError('');
+  try {
+    const data = await postTurn({ sessionId, message });
+    turnCount += 1;
+    updateTicks();
+    addMessage('interviewer', data.reply);
+    if (data.done) {
+      renderFeedback(data.feedback);
+    } else {
+      input.focus();
+    }
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    form.requestSubmit();
+  }
+});
+</script>
+</body>
+</html>
